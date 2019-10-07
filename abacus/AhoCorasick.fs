@@ -3,18 +3,27 @@ namespace Abacus
 module private AhoCorasick =
     open System.Collections.Generic
     
+    // Represents a state in the Aho-Corasick matching machine
     type State() =
         let symbolMap = new SymbolMap()
-        let mutable fail = None  
-        member val Values = Set.empty<string> with get,set
+        let mutable fail = None
+        // Map of symbols to transition states
         member this.SymbolMap = symbolMap
+        // Keywords that end at this state
+        member val Values = Set.empty<string> with get,set
+        // Once the states have been added, the root state's goto function
+        // is configured to loop to itself if the symbol does not to map to
+        // another state. 
         member val LoopOnFail = false with get,set
+        // The goto function: for a given state returns either the state to transition to, or Fail 
         member this.GoTo(symbol : char) =
             if symbolMap.ContainsKey(symbol) then Result symbolMap.[symbol]
             elif this.LoopOnFail then Result this
             else Fail
-        member this.AddChild symbol state =
+        // Add a symbol to the machine and the transition state 
+        member this.AddSymbol symbol state =
             symbolMap.Add(symbol, state)
+        // The state to transition to when goto returns Fail
         member this.Fail
             with get() =
                 match fail with
@@ -28,8 +37,9 @@ module private AhoCorasick =
 
     and SymbolMap = Dictionary<char, State>
     
-    let rec find (state:State) (searchTerm:char list) = seq {
-        match searchTerm with
+    // Returns all keywords found in the search text 
+    let rec find (state:State) (searchText:char list) = seq {
+        match searchText with
         | [] -> ()
         | head::tail ->
             match state.GoTo head with
@@ -37,22 +47,24 @@ module private AhoCorasick =
                 yield! s.Values
                 yield! find s tail 
             | Fail ->
-                yield! find state.Fail searchTerm
+                yield! find state.Fail searchText
         }
     
-    let enter (root:State) pattern =
+    // Adds a keyword to the state machine
+    let enter (root:State) keyword =
         let mutable state = root
-        for c in pattern do 
+        for c in keyword do 
             match state.GoTo c with
             | Fail ->
                 let newState = new State()
                 newState.Fail <- root
-                state.AddChild c newState
+                state.AddSymbol c newState
                 state <- newState
             | Result s ->
                 state <- s
-        state.Values <- Set.add pattern state.Values
+        state.Values <- Set.add keyword state.Values
    
+    // Performs a breadth-first traversal of the state tree
     let breadthFirstTraverse (state:State) =
         let rec traverse (states:seq<State>) = seq {
             let children = states |> Seq.collect (fun s -> s.SymbolMap.Values)
@@ -63,7 +75,10 @@ module private AhoCorasick =
         }
         state |> Seq.singleton |> traverse
         
+    // Constructs the fail transitions for each state
     let constructFailure root =
+        // Follow the failure transitions until we find a state where
+        // goto state a !== fail  
         let rec followFails (a:char) (state:State) =
             match state.Fail.GoTo a with
             | Result s -> s
@@ -75,6 +90,7 @@ module private AhoCorasick =
                 s.Values <- Set.union s.Fail.Values s.Values
                 
 open AhoCorasick
+// Class to represent the AhoCorasick machine
 type AhoCorasick(keywords) =
     let root = new State()
     do
@@ -83,4 +99,4 @@ type AhoCorasick(keywords) =
         root.LoopOnFail <- true
         constructFailure root
     member this.Find(searchText: string) =
-        find root (Seq.toList searchText)
+        searchText |> Seq.toList |> find root
