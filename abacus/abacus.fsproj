@@ -5,7 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="AhoCorasickStringMatch.fs" />
+        <Compile Include="AhoCorasick.fs" />
     </ItemGroup>
 
 </Project>
