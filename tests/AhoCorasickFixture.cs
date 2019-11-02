@@ -25,7 +25,7 @@ namespace tests
         {
             var keywords = new[] {"he", "she", "his", "hers"};
             
-            var subject = new AhoCorasick(keywords);
+            var subject = new AhoCorasickStringMatch(keywords);
             var result = subject.Find("ushers").ToList();
             
             result.Count.ShouldBe(3);
@@ -42,7 +42,7 @@ namespace tests
             var keywords = GenerateKeywords(100000);
 
             stopwatch.Start();
-            var machine = new AhoCorasick(keywords); 
+            var machine = new AhoCorasickStringMatch(keywords); 
             stopwatch.Stop();
             output.WriteLine($"Machine build time: {stopwatch.Elapsed.TotalMilliseconds}ms");
             
@@ -86,7 +86,7 @@ namespace tests
 
             for (var i = 0; i < keywordCounts.Length; i++)
             {
-                var machine = new AhoCorasick(GenerateKeywords(keywordCounts[i]));
+                var machine = new AhoCorasickStringMatch(GenerateKeywords(keywordCounts[i]));
                 machine.Find("foo"); // Burn one, to blow out the cobwebs
                 stopwatch.Restart();
                 machine.Find(searchText);
@@ -127,7 +127,7 @@ namespace tests
             for (var i = 0; i < keywordCounts.Length; i++)
             {
                 stopwatch.Restart();
-                var machine = new AhoCorasick(GenerateKeywords(keywordCounts[i]));
+                var machine = new AhoCorasickStringMatch(GenerateKeywords(keywordCounts[i]));
                 stopwatch.Stop();
                 var constructionTime = stopwatch.Elapsed;
                 constructionTimes[i] = constructionTime.Ticks;

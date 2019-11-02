@@ -91,7 +91,7 @@ module private AhoCorasick =
                 
 open AhoCorasick
 // Class to represent the AhoCorasick machine
-type AhoCorasick(keywords) =
+type AhoCorasickStringMatch(keywords) =
     let root = new State()
     do
         for keyword in keywords do
